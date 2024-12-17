@@ -1,19 +1,29 @@
 import { account } from "$lib/server/util/appwrite";
-import {userQHandle} from "$lib/server/util/auth/userQHandle";
+import { userQHandle } from "$lib/server/util/auth/userQHandle";
+import { ID } from "appwrite";
 
 export const authHandlers = {
     signup: async (email: string, password: string, username: string) => {
         try {
-            
             // First, run the transaction to check if the username is available
             const isUsernameAvailable = await userQHandle.isUserAvailable(username);
+            console.log(isUsernameAvailable);
             if (!isUsernameAvailable) {
                 throw new Error(`Username ${username} is already taken`);
             }
-            const response = await account.create(email, password, username);
-            console.log(response);
+
+            console.log("making new account ");
+            const response = await account.create(
+                ID.unique(), // Generate a unique ID for the user
+                email, 
+                password, 
+                username // Optional name parameter
+            );
+            
+            console.log(response); // Success
             return response;
         } catch (error) {
+            console.error(error);
             return error;
         }
     },
@@ -35,9 +45,5 @@ export const authHandlers = {
             return error;
         }
     },
-
-
-
-
 
 };

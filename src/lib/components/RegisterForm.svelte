@@ -9,7 +9,9 @@
 	let password2 = $state("");
 	let popupMessage = $state("");
 
-	const submit = async () => {
+	const submit = async (event: Event) => {
+		event.preventDefault(); // Prevent the form's default behavior
+
 		if (password !== password2) {
 			popupMessage = "Passwords do not match";
 			return;
