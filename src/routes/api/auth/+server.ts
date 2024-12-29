@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { authHandlers } from '$lib/server/util/auth/authHandlers';
+import { authHandlers } from '$lib/server/util/auth/authHandlers.ts';
 import type { RequestHandler } from '@sveltejs/kit';
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -18,7 +18,7 @@ export const POST: RequestHandler = async ({ request }) => {
                     return json({ error: 'Missing required fields' }, { status: 400 });
                 }
                 // Call the signup handler
-                const result = await authHandlers.signup(email, password, username);
+                const result = await authHandlers.signup(email, password, username, fullName);
                 return json(result, { status: 201 });
             }
 

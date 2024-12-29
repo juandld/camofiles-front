@@ -1,8 +1,9 @@
-import { database } from "$lib/server/util/appwrite";
-import { Query } from "appwrite";
+import { database } from "$lib/server/util/appwrite.ts";
+import { Query, ID } from "appwrite";
+import { getRequiredEnv } from "$lib/server/util/getEnv.ts";
 
-const databaseID = import.meta.env.VITE_APPWRITE_AUTH_DATABASE_ID;
-const authCollectionID = import.meta.env.VITE_APPWRITE_USERS_COLLECTION_ID;
+const databaseID = getRequiredEnv("VITE_APPWRITE_DATABASE_ID");
+const authCollectionID = getRequiredEnv("VITE_APPWRITE_USERS_COLLECTION_ID");
 
 export const userQHandle = {
     isUserAvailable: async (username: string) => {
@@ -10,15 +11,15 @@ export const userQHandle = {
             console.log("databaseID", databaseID);
 
 
-            const response = await database.listDocuments(
+            const promise = await database.listDocuments(
                 databaseID,
                 authCollectionID,
                 [Query.equal("username", [username])]
             );
 
-            console.log("response", response);
+            console.log("promise", promise);
 
-            if (response.total === 0) {
+            if (promise.total === 0) {
                 return true;
             }
         } catch (error) {
@@ -26,4 +27,24 @@ export const userQHandle = {
             return false;
         }
     },
+
+    createUser: async (username: string, email: string, fullName: string) => {
+        try {
+            const promise = database.createDocument(
+                databaseID,
+                authCollectionID,
+                ID.unique(),
+                {
+                    username: username,
+                    email: email,
+                    fullName: fullName,
+                    creationDate: new Date().toISOString() // Current time as string
+                }
+            )
+            return promise;
+        } catch (error) {
+            console.error("Error in createUser:", error);
+            return false;
+        }
+    }     
 };

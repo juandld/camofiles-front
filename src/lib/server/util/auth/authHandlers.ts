@@ -1,9 +1,9 @@
-import { account } from "$lib/server/util/appwrite";
-import { userQHandle } from "$lib/server/util/auth/userQHandle";
+import { account } from "$lib/server/util/appwrite.ts";
+import { userQHandle } from "./userQHandle.ts";
 import { ID } from "appwrite";
 
 export const authHandlers = {
-    signup: async (email: string, password: string, username: string) => {
+    signup: async (email: string, password: string, username: string, fullName: string) => {
         try {
             // First, run the transaction to check if the username is available
             const isUsernameAvailable = await userQHandle.isUserAvailable(username);
@@ -11,17 +11,29 @@ export const authHandlers = {
             if (!isUsernameAvailable) {
                 throw new Error(`Username ${username} is already taken`);
             }
-
+            
+            // If username is available, create the account
+            //In the auth service
             console.log("making new account ");
-            const response = await account.create(
-                ID.unique(), // Generate a unique ID for the user
+            const promiseAuth = await account.create(
+                ID.unique(),
                 email, 
                 password, 
-                username // Optional name parameter
+                username 
+            );
+
+            // In the auth database
+            const promiseDatabase = await userQHandle.createUser(
+                email,
+                password,
+                username,
+                fullName
             );
             
-            console.log(response); // Success
-            return response;
+            console.log(promiseAuth); // Success
+            if (promiseDatabase) {
+                return true; // Success
+            }
         } catch (error) {
             console.error(error);
             return error;

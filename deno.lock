@@ -1,6 +1,10 @@
 {
   "version": "4",
   "specifiers": {
+    "jsr:@std/assert@*": "1.0.9",
+    "jsr:@std/dotenv@*": "0.225.3",
+    "jsr:@std/internal@^1.0.5": "1.0.5",
+    "jsr:@std/path@*": "1.0.8",
     "npm:@skeletonlabs/skeleton-svelte@^1.0.0-next.14": "1.0.0-next.15_svelte@5.13.0__acorn@8.14.0",
     "npm:@skeletonlabs/skeleton@^3.0.0-next.9": "3.0.0-next.9_tailwindcss@3.4.16__postcss@8.4.49",
     "npm:@sveltejs/adapter-auto@3": "3.3.1_@sveltejs+kit@2.11.1__@sveltejs+vite-plugin-svelte@4.0.3___svelte@5.13.0____acorn@8.14.0___vite@5.4.11__svelte@5.13.0___acorn@8.14.0__vite@5.4.11_@sveltejs+vite-plugin-svelte@4.0.3__svelte@5.13.0___acorn@8.14.0__vite@5.4.11_svelte@5.13.0__acorn@8.14.0_vite@5.4.11",
@@ -15,6 +19,23 @@
     "npm:tailwindcss@^3.4.9": "3.4.16_postcss@8.4.49",
     "npm:typescript@5": "5.7.2",
     "npm:vite@^5.0.3": "5.4.11"
+  },
+  "jsr": {
+    "@std/assert@1.0.9": {
+      "integrity": "a9f0c611a869cc791b26f523eec54c7e187aab7932c2c8e8bea0622d13680dcd",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/dotenv@0.225.3": {
+      "integrity": "a95e5b812c27b0854c52acbae215856d9cce9d4bbf774d938c51d212711e8d4a"
+    },
+    "@std/internal@1.0.5": {
+      "integrity": "54a546004f769c1ac9e025abd15a76b6671ddc9687e2313b67376125650dc7ba"
+    },
+    "@std/path@1.0.8": {
+      "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
+    }
   },
   "npm": {
     "@alloc/quick-lru@5.2.0": {
@@ -1537,6 +1558,14 @@
     "zimmerframe@1.1.2": {
       "integrity": "sha512-rAbqEGa8ovJy4pyBxZM70hg4pE6gDgaQ0Sl9M3enG3I0d6H4XSAM3GeNGLKnsBpuijUow064sf7ww1nutC5/3w=="
     }
+  },
+  "redirects": {
+    "https://deno.land/std/dotenv/mod.ts": "https://deno.land/std@0.224.0/dotenv/mod.ts"
+  },
+  "remote": {
+    "https://deno.land/std@0.224.0/dotenv/mod.ts": "0180eaeedaaf88647318811cdaa418cc64dc51fb08354f91f5f480d0a1309f7d",
+    "https://deno.land/std@0.224.0/dotenv/parse.ts": "09977ff88dfd1f24f9973a338f0f91bbdb9307eb5ff6085446e7c423e4c7ba0c",
+    "https://deno.land/std@0.224.0/dotenv/stringify.ts": "275da322c409170160440836342eaa7cf012a1d11a7e700d8ca4e7f2f8aa4615"
   },
   "workspace": {
     "packageJson": {
