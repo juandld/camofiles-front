@@ -6,29 +6,25 @@ const databaseID = getRequiredEnv("VITE_APPWRITE_DATABASE_ID");
 const authCollectionID = getRequiredEnv("VITE_APPWRITE_USERS_COLLECTION_ID");
 
 export const userQHandle = {
-    isUserAvailable: async (username: string) => {
-        try {
-            console.log("databaseID", databaseID);
-
-
+        isUserAvailable: async (username: string) => {
+          try {      
             const promise = await database.listDocuments(
-                databaseID,
-                authCollectionID,
-                [Query.equal("username", [username])]
+              databaseID,
+              authCollectionID,
+              [Query.equal("username", [username])]
             );
-
-            console.log("promise", promise);
-
             if (promise.total === 0) {
-                return true;
-            }
-        } catch (error) {
+              return true; 
+            } else {
+              return false; 
+            } 
+          } catch (error) {
             console.error("Error in isUserAvailable:", error);
-            return false;
-        }
-    },
+            return false; 
+          }
+        },
 
-    createUser: async (username: string, email: string, fullName: string) => {
+    createUser: (username: string, email: string, fullName: string) => {
         try {
             const promise = database.createDocument(
                 databaseID,

@@ -8,28 +8,29 @@
 	let password = $state("");
 	let password2 = $state("");
 	let popupMessage = $state("");
+	let isLoading = $state(false);
 
 	const submit = async (event: Event) => {
-		event.preventDefault(); // Prevent the form's default behavior
+		event.preventDefault();
+		popupMessage = "";
+		isLoading = true;
 
+		// Simple validation
 		if (password !== password2) {
 			popupMessage = "Passwords do not match";
+			isLoading = false;
 			return;
 		}
 
-		if (
-			email === "" ||
-			username === "" ||
-			fullName === "" ||
-			password === ""
-		) {
-			popupMessage = "Please fill in all the fields";
+		if (!email || !username || !fullName || !password) {
+			popupMessage = "Please fill in all fields";
+			isLoading = false;
 			return;
 		}
 
+		// Send the registration request to the server
 		try {
-			// Sign up with email and password auth service
-			const responseAuth = await fetch("/api/auth/", {
+			const response = await fetch("/api/auth/", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -45,31 +46,18 @@
 				}),
 			});
 
-			if (responseAuth) {
-				console.log(responseAuth);
-				//goto(username);
+			const data = await response.json();
+
+			if (data.error) {
+				popupMessage = data.error;
+				isLoading = false;
+				return;
 			}
+
+			await goto(`/${username}`);
 		} catch (error) {
-			if (error instanceof Error) {
-				console.log(error.message);
-				switch (error.message) {
-					case "Firebase: Error (auth/email-already-in-use).":
-						popupMessage = "Email is already in use";
-						break;
-					case "Firebase: Error (auth/invalid-email).":
-						popupMessage = "Invalid email address";
-						break;
-					case "Firebase: Error (auth/weak-password).":
-						popupMessage = "Password is too weak";
-						break;
-					case "Username already exists":
-						console.log("Username already exists");
-						popupMessage = "Username is already in use";
-						break;
-					default:
-						popupMessage = error.message;
-				}
-			}
+			popupMessage = "Something went wrong, please try again";
+			isLoading = false;
 		}
 	};
 </script>
@@ -77,6 +65,7 @@
 {#if popupMessage}
 	<AuthPopup {popupMessage} />
 {/if}
+
 <div
 	class="card variant-ghost-surface w-full p-4 flex justify-center items-center flex-col"
 >
@@ -89,6 +78,7 @@
 				name="email"
 				autocomplete="email"
 				bind:value={email}
+				disabled={isLoading}
 			/>
 		</label>
 		<label class="label">
@@ -99,6 +89,7 @@
 				name="username"
 				autocomplete="username"
 				bind:value={username}
+				disabled={isLoading}
 			/>
 		</label>
 		<label class="label">
@@ -109,6 +100,7 @@
 				name="fullname"
 				autocomplete="name"
 				bind:value={fullName}
+				disabled={isLoading}
 			/>
 		</label>
 		<label class="label">
@@ -119,6 +111,7 @@
 				name="new-password"
 				autocomplete="new-password"
 				bind:value={password}
+				disabled={isLoading}
 			/>
 		</label>
 		<label class="label">
@@ -129,10 +122,15 @@
 				name="confirm-password"
 				autocomplete="new-password"
 				bind:value={password2}
+				disabled={isLoading}
 			/>
 		</label>
-		<button class="btn variant-filled-surface m-2" type="submit">
-			Register
+		<button 
+			class="btn variant-filled-surface m-2" 
+			type="submit" 
+			disabled={isLoading}
+		>
+			{isLoading ? 'Creating Account...' : 'Register'}
 		</button>
 	</form>
 </div>

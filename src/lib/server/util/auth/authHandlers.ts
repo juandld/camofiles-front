@@ -5,16 +5,11 @@ import { ID } from "appwrite";
 export const authHandlers = {
     signup: async (email: string, password: string, username: string, fullName: string) => {
         try {
-            // First, run the transaction to check if the username is available
             const isUsernameAvailable = await userQHandle.isUserAvailable(username);
-            console.log(isUsernameAvailable);
             if (!isUsernameAvailable) {
-                throw new Error(`Username ${username} is already taken`);
+                return { error: `Username ${username} is already taken` };
             }
-            
-            // If username is available, create the account
-            //In the auth service
-            console.log("making new account ");
+
             const promiseAuth = await account.create(
                 ID.unique(),
                 email, 
@@ -22,21 +17,17 @@ export const authHandlers = {
                 username 
             );
 
-            // In the auth database
             const promiseDatabase = await userQHandle.createUser(
-                email,
-                password,
                 username,
+                email,
                 fullName
             );
-            
-            console.log(promiseAuth); // Success
+
             if (promiseDatabase) {
-                return true; // Success
+                return { success: true };
             }
         } catch (error) {
-            console.error(error);
-            return error;
+            return { error: `Signup failed: ${(error as Error).message}` };
         }
     },
 
@@ -45,7 +36,7 @@ export const authHandlers = {
             const response = await account.createEmailPasswordSession(email, password);
             return response;
         } catch (error) {
-            return error;
+            return { error: `Login failed: ${(error as Error).message}` };
         }
     },
 
@@ -54,8 +45,7 @@ export const authHandlers = {
             const response = await account.deleteSession('current');
             return response;
         } catch (error) {
-            return error;
+            return { error: `Logout failed: ${(error as Error).message}` };
         }
     },
-
 };
