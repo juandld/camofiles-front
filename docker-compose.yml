@@ -1,0 +1,13 @@
+# docker-compose.yml
+services:
+  app:
+    build:
+      context: .
+      platforms:
+        - "${PLATFORM:-linux/amd64}"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    environment:
+      - NODE_ENV=development
