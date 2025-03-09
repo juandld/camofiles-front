@@ -22,6 +22,7 @@ Deno.test("createUser successfully creates a new user", async () => {
     testUsername,
     testEmail,
     testFullName,
+    testEmail
   );
   assert(userCreated, "Expected the user to be successfully created.");
 });

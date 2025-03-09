@@ -2,6 +2,8 @@ import { json } from "@sveltejs/kit";
 import { authHandlers } from "$lib/server/util/auth/authHandlers.ts";
 import type { RequestHandler } from "@sveltejs/kit";
 
+
+
 export const POST: RequestHandler = async ({ request }) => {
   try {
     const { type, content } = await request.json();
@@ -75,6 +77,20 @@ export const POST: RequestHandler = async ({ request }) => {
         } catch (error) {
           console.error("Logout error:", error);
           return json({ error: "Logout failed", details: (error as Error).message }, { status: 500 });
+        }
+      }
+
+      case "check": {
+        const { sessionId, jwt } = content;
+        try {
+          const result = await authHandlers.check(sessionId, jwt);
+          if (result && 'error' in result) {
+            return json({ error: result.error }, { status: 400 });
+          }
+          return json(result, { status: 200 });
+        } catch (error) {
+          console.error("Check error:", error);
+          return json({ error: "Check failed", details: (error as Error).message }, { status: 500 });
         }
       }
 

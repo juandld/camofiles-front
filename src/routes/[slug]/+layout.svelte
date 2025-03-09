@@ -1,37 +1,41 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { browser } from '$app/environment';
+    import { onMount } from 'svelte';
+    import { goto } from '$app/navigation';
+    import { userState } from '$lib/stores/state.svelte';
 
-	
-	onMount(() => {
-		if (browser) {
-            // Check if the user is logged in
-            fetch('/api/auth/', {
-                method: 'POST',
+    let isLoggedIn = false;    
+
+    const checkAuthStatus = async () => {        
+        try {
+            const response = await fetch("/api/auth", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    type: 'check',
+                    type: "check",
+                    content: { sessionId: userState.sessionId, jwt: userState.jwt },
                 }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.error) {
-                        return;
-                    }
+            });
+            
+            if (!response.ok) {
+                goto('/');
+                return;
+            }
 
-                    goto('/dashboard');
-                })
-                .catch(() => {
-                    // Do nothing
-                });
+            const result = await response.json();            
+            isLoggedIn = result.success;
+        } catch (error) {
+            console.error('Error checking auth status:', error);
+            isLoggedIn = false;
         }
-	});
-	
+    };
+
+    onMount(() => {        
+        checkAuthStatus();
+    });
 </script>
 
 <main class="p-10">
-	<slot />
+    <slot />
 </main>

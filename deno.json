@@ -2,9 +2,13 @@
     "compilerOptions": {
       "lib": ["deno.ns", "dom"]
     },
-    "importMap": "./import_map.json",
+    "imports": {
+      "$lib/": "./src/lib/",
+      "@hig/jwt": "jsr:@hig/jwt@^0.1.1"
+    },
     "tasks": {
       "dev": "vite dev"
-    }
+    },
+    "nodeModulesDir":"auto"
   }
   
