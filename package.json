@@ -25,8 +25,8 @@
 	"dependencies": {
 		"@tailwindcss/forms": "^0.5.9",
 		"@tailwindcss/typography": "^0.5.15",
-		"appwrite": "^14.0.1",
 		"jose": "5.9.6",
-		"jsonwebtoken": "^9.0.2"
+		"jsonwebtoken": "^9.0.2",
+		"node-appwrite": "^17.0.0"
 	}
 }

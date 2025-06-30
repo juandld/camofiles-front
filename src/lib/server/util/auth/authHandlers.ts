@@ -1,5 +1,5 @@
 import { expClient } from "$lib/server/util/appwrite.ts";
-import { Account } from "appwrite";
+import { Account } from "node-appwrite";
 import { userQHandle } from "./userQHandle.ts";
 import { ID } from "appwrite";
 import { SignJWT } from "jose";
