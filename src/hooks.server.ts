@@ -3,6 +3,11 @@ import type { Handle } from '@sveltejs/kit';
 import { createSessionClient } from '$lib/server/util/appwrite';
 
 export const handle: Handle = async ({ event, resolve }) => {
+    // Ignore requests for .well-known files
+    if (event.url.pathname.startsWith('/.well-known')) {
+        return new Response(null, { status: 404 });
+    }
+
     // Attempt to retrieve the session cookie.
     const session = event.cookies.get('session');
 

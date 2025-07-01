@@ -1,7 +1,7 @@
-import { expClient } from "$lib/server/util/appwrite.ts";
+import { createAdminClient, createJWTClient, expClient } from "$lib/server/util/appwrite.ts";
 import { Account } from "node-appwrite";
 import { userQHandle } from "./userQHandle.ts";
-import { ID } from "appwrite";
+import { ID } from "node-appwrite";
 import { SignJWT } from "jose";
 import type { JWTPayload } from "jose";
 
@@ -35,7 +35,7 @@ export const authHandlers = {
       }
 
       const userId = ID.unique();
-      const account = new Account(expClient);
+      const { account } = createAdminClient();
       const promiseAuth = await account.create(
         userId,
         email,
@@ -60,16 +60,13 @@ export const authHandlers = {
 
   login: async (email: string, password: string) => {
     try {     
-
         const account = new Account(expClient);
-        //Left here
         const response = await account.createEmailPasswordSession(
             email,
             password,
         );        
 
         console.log("Login called");
-        // find user by uid and get the user's username
         const sessionId = response.$id;
         const userID = response.userId;
         const username = await userQHandle.findUsernameByID(userID);        
@@ -99,8 +96,7 @@ export const authHandlers = {
     
     console.log("Check JWT" + jwt);
     
-    const client =  expClient.setJWT(jwt);
-    const account = new Account(client);
+    const { account } = createJWTClient(jwt);
     console.log("Get session called" + sessionId);
 
     try {

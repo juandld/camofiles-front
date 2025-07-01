@@ -1,5 +1,5 @@
-import { database } from "$lib/server/util/appwrite.ts";
-import { Query, ID } from "appwrite";
+import { createAdminClient } from "$lib/server/util/appwrite.ts";
+import { Query } from "node-appwrite";
 import { getRequiredEnv } from "$lib/server/util/getEnv.ts";
 
 const databaseID = getRequiredEnv("VITE_APPWRITE_DATABASE_ID");
@@ -7,34 +7,28 @@ const authCollectionID = getRequiredEnv("VITE_APPWRITE_USERS_COLLECTION_ID");
 
 export const userQHandle = {
     isUserAvailable: async (username: string) => {
-        try {      
-            const promise = await database.listDocuments(
+        try {
+            const { databases } = createAdminClient();
+            const promise = await databases.listDocuments(
                 databaseID,
                 authCollectionID,
                 [Query.equal("username", [username])]
             );
-            if (promise.total === 0) {
-                return true; 
-            } else {
-                return false; 
-            } 
+            return promise.total === 0;
         } catch (error) {
             console.error("Error in isUserAvailable:", error);
-            return false; 
+            return false;
         }
     },
     findUsernameByID: async (uid: string) => {
         try {
-            const promise = await database.getDocument(
+            const { databases } = createAdminClient();
+            const promise = await databases.getDocument(
                 databaseID,
                 authCollectionID,
                 uid
-            );            
-            if (promise.username) {
-                return promise.username;
-            } else {
-                return false;
-            }
+            );
+            return promise.username ? promise.username : false;
         } catch (error) {
             console.error("Error in findUsernameByID:", error);
             return false;
@@ -42,7 +36,8 @@ export const userQHandle = {
     },
     createUser: (userId: string, username: string, email: string, fullName: string) => {
         try {
-            const promise = database.createDocument(
+            const { databases } = createAdminClient();
+            return databases.createDocument(
                 databaseID,
                 authCollectionID,
                 userId,
@@ -50,13 +45,12 @@ export const userQHandle = {
                     username: username,
                     email: email,
                     fullName: fullName,
-                    creationDate: new Date().toISOString() // Current time as string
+                    creationDate: new Date().toISOString()
                 }
-            )
-            return promise;
+            );
         } catch (error) {
             console.error("Error in createUser:", error);
             return false;
         }
-    }     
+    }
 };

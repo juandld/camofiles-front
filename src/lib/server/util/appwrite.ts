@@ -25,8 +25,8 @@ export const database: Databases = new Databases(client);
 export const createAdminClient = () => {
     const adminClient = new Client()
        .setEndpoint(getRequiredEnv("VITE_APPWRITE_ENDPOINT")!)
-       .setProject(getRequiredEnv("VITE_APPWRITE_PROJECT_ID")!);
-        .setKey(getRequiredEnv("VITE_APPWRITE_API_KEY
+       .setProject(getRequiredEnv("VITE_APPWRITE_PROJECT_ID")!)
+        .setKey(getRequiredEnv("VITE_APPWRITE_API_KEY")!)
        // Note: Appwrite's JS SDK does not support setKey; use server-side SDKs for admin actions.
 
     return {
