@@ -1,104 +1,79 @@
-import { json } from "@sveltejs/kit";
-import { authHandlers } from "$lib/server/util/auth/authHandlers.ts";
-import type { RequestHandler } from "@sveltejs/kit";
+import { json, type RequestHandler } from "@sveltejs/kit";
+import { authHandlers } from "$lib/server/util/auth/authHandlers";
 
+/**
+ * Handles POST requests to /api/auth.
+ * This endpoint acts as a dispatcher for various authentication actions
+ * like signup, login, and logout.
+ */
+export const POST: RequestHandler = async ({ request, cookies }) => {
+	try {
+		const { type, content } = await request.json();
 
+		if (!type || !content) {
+			return json({ error: "Invalid request body. 'type' and 'content' are required." }, { status: 400 });
+		}
 
-export const POST: RequestHandler = async ({ request }) => {
-  try {
-    const { type, content } = await request.json();
+		switch (type) {
+			// --- User Registration ---
+			case "signup": {
+				const { email, password, username, fullName } = content;
+				if (!email || !password || !username || !fullName) {
+					return json({ error: "Missing required fields for signup." }, { status: 400 });
+				}
+				const result = await authHandlers.signup(email, password, username, fullName);
+				return json(result, { status: result.error ? 400 : 201 });
+			}
 
-    if (!type || !content) {
-      return json({ error: "Invalid request format" }, { status: 400 });
-    }
+			// --- User Login ---
+			case "login": {
+				const { email, password } = content;
+				if (!email || !password) {
+					return json({ error: "Email and password are required." }, { status: 400 });
+				}
 
-    switch (type) {
-      case "signup": {
-        const { email, password, username, fullName } = content;
+				const result = await authHandlers.login(email, password);
 
-        const missingFields = [];
-        if (!email) missingFields.push("email");
-        if (!password) missingFields.push("password");
-        if (!username) missingFields.push("username");
-        if (!fullName) missingFields.push("fullName");
+				if (result.error) {
+					return json(result, { status: 400 });
+				}
 
-        if (missingFields.length > 0) {
-          return json(
-            { error: `Missing fields: ${missingFields.join(", ")}` },
-            { status: 400 },
-          );
-        }
+				// On successful login, set a secure, httpOnly cookie with the session secret.
+				if (result.sessionSecret) {
+					cookies.set("session", result.sessionSecret, {
+						path: "/",
+						httpOnly: true,
+						sameSite: "strict",
+						secure: process.env.NODE_ENV === "production",
+						maxAge: 60 * 60 * 24 * 7 // 1 week
+					});
+				}
 
-        try {
-          const result = await authHandlers.signup(
-            email,
-            password,
-            username,
-            fullName,
-          );
-          if (result && 'error' in result) {
-            return json({ error: result.error }, { status: 400 });
-          }
-          return json(result, { status: 201 });
-        } catch (error) {
-          console.error("Signup error:", error);
-          return json({ error: "Signup failed", details: (error as Error).message }, { status: 500 });
-        }
-      }
+				// Do not send the sessionSecret back to the client.
+				return json({ success: true, username: result.username }, { status: 200 });
+			}
 
-      case "login": {
-        const { email, password } = content;
+			// --- User Logout ---
+			case "logout": {
+				const session = cookies.get("session");
+				if (!session) {
+					return json({ error: "No active session to log out from." }, { status: 400 });
+				}
 
-        if (!email || !password) {
-          return json({ error: "Email and password required" }, {
-            status: 400,
-          });
-        }
+				const result = await authHandlers.logout(session);
 
-        try {
-          const result = await authHandlers.login(email, password);
-          if (result && 'error' in result) {
-            return json({ error: result.error }, { status: 400 });
-          }
-          return json(result, { status: 200 });
-        } catch (error) {
-          console.error("Login error:", error);
-          return json({ error: "Login failed", details: (error as Error).message }, { status: 500 });
-        }
-      }
+				// Clear the session cookie on successful logout.
+				cookies.delete("session", { path: "/" });
 
-      case "logout": {
-        try {
-          const result = await authHandlers.logout();
-          if (result && 'error' in result) {
-            return json({ error: result.error }, { status: 400 });
-          }
-          return json(result, { status: 200 });
-        } catch (error) {
-          console.error("Logout error:", error);
-          return json({ error: "Logout failed", details: (error as Error).message }, { status: 500 });
-        }
-      }
+				return json(result, { status: result.error ? 400 : 200 });
+			}
 
-      case "check": {
-        const { sessionId, jwt } = content;
-        try {
-          const result = await authHandlers.check(sessionId, jwt);
-          if (result && 'error' in result) {
-            return json({ error: result.error }, { status: 400 });
-          }
-          return json(result, { status: 200 });
-        } catch (error) {
-          console.error("Check error:", error);
-          return json({ error: "Check failed", details: (error as Error).message }, { status: 500 });
-        }
-      }
-
-      default:
-        return json({ error: `Unknown type: ${type}` }, { status: 400 });
-    }
-  } catch (error) {
-    console.error("Error handling POST request:", error);
-    return json({ error: "Internal server error", details: (error as Error).message }, { status: 500 });
-  }
+			// --- Unhandled Action ---
+			default:
+				return json({ error: `Unknown action type: ${type}` }, { status: 400 });
+		}
+	} catch (error) {
+		console.error("API Auth Error:", error);
+		return json({ error: "An internal server error occurred." }, { status: 500 });
+	}
 };

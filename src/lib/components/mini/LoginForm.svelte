@@ -33,10 +33,10 @@
                 throw new Error(result.error || 'Login failed');
             }
 
-            if (result.username && result.jwt) {
+            if (result.username) {
+                console.log("User logged in successfully:", result.username);
                 // set user session store state
                 userState.sessionId = result.sessionId;
-                userState.jwt = result.jwt;
                 // Redirect to user profile
                 goto(`/${result.username}`);
             } else {

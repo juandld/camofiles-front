@@ -64,26 +64,3 @@ export const createSessionClient = (sessionSecret: string) => {
         }
     };
 };
-
-/**
- * Creates a JWT Client.
- * This client is authenticated with a short-lived JWT for delegated,
- * permission-aware requests.
- * @param {string} jwt - The JSON Web Token.
- * @returns {Account: Account, Databases: Databases}
- */
-export const createJWTClient = (jwt: string) => {
-    const jwtClient = new Client()
-       .setEndpoint(getRequiredEnv("VITE_APPWRITE_ENDPOINT")!)
-       .setProject(getRequiredEnv("VITE_APPWRITE_PROJECT_ID")!)
-       .setJWT(jwt);
-
-    return {
-        get account() {
-            return new Account(jwtClient);
-        },
-        get databases() {
-            return new Databases(jwtClient);
-        }
-    };
-};

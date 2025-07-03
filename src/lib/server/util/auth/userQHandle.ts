@@ -28,7 +28,11 @@ export const userQHandle = {
                 authCollectionID,
                 uid
             );
-            return promise.username ? promise.username : false;
+            // Check if the document exists and has a username field
+            if (promise.username) {
+                return promise.username;
+            }
+            return false;
         } catch (error) {
             console.error("Error in findUsernameByID:", error);
             return false;
@@ -42,6 +46,7 @@ export const userQHandle = {
                 authCollectionID,
                 userId,
                 {
+                    userId: userId, // Storing the auth user ID in the document
                     username: username,
                     email: email,
                     fullName: fullName,

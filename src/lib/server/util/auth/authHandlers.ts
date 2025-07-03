@@ -1,110 +1,99 @@
-import { createAdminClient, createJWTClient, expClient } from "$lib/server/util/appwrite.ts";
-import { Account } from "node-appwrite";
-import { userQHandle } from "./userQHandle.ts";
-import { ID } from "node-appwrite";
-import { SignJWT } from "jose";
-import type { JWTPayload } from "jose";
+import { createAdminClient, createSessionClient } from "$lib/server/util/appwrite";
+import { Client, Account, ID } from "node-appwrite";
+import { getRequiredEnv } from "$lib/server/util/getEnv";
+import { userQHandle } from "./userQHandle";
 
-import { getRequiredEnv } from "../getEnv.ts";
-
-const jwtSighn = getRequiredEnv("VITE_JWT_SECRET_KEY");
-
-async function createJWT(payload:JWTPayload): Promise<string> {
-  const secret = new TextEncoder().encode(jwtSighn);
-  const jwt = await new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("1h")
-    .sign(secret);
-    console.log("JWT created" + jwt);
-    
-  return jwt;
-}
-
+/**
+ * A collection of handlers for authentication-related actions.
+ */
 export const authHandlers = {
-  signup: async (
-    email: string,
-    password: string,
-    username: string,
-    fullName: string,
-  ) => {
-    try {
-      const isUsernameAvailable = await userQHandle.isUserAvailable(username);
-      if (!isUsernameAvailable) {
-        return { error: `Username ${username} is already taken` };
-      }
+	/**
+	 * Handles user registration.
+	 * It first checks for username availability, then creates a new Appwrite user
+	 * and a corresponding user profile document in the database.
+	 * @returns A success object or an error object.
+	 */
+	signup: async (email: string, password: string, username: string, fullName: string) => {
+		try {
+			const isUsernameAvailable = await userQHandle.isUserAvailable(username);
+			if (!isUsernameAvailable) {
+				return { error: `Username ${username} is already taken` };
+			}
 
-      const userId = ID.unique();
-      const { account } = createAdminClient();
-      const promiseAuth = await account.create(
-        userId,
-        email,
-        password,
-        username,
-      );
+			// Use the admin client to create a new user in Appwrite Auth.
+			const { account } = createAdminClient();
+			const newUser = await account.create(ID.unique(), email, password, username);
 
-      const promiseDatabase = await userQHandle.createUser(
-        userId,
-        username,
-        email,
-        fullName,
-      );
+			// Create a corresponding user profile in the database.
+			await userQHandle.createUser(newUser.$id, username, email, fullName);
 
-      if (promiseDatabase && promiseAuth) {
-        return { success: true };
-      }
-    } catch (error) {
-      return { error: `Signup failed: ${(error as Error).message}` };
-    }
-  },
+			return { success: true };
+		} catch (error) {
+			console.error("Signup Error:", error);
+			return { error: `Signup failed: ${(error as Error).message}` };
+		}
+	},
 
-  login: async (email: string, password: string) => {
-    try {     
-        const account = new Account(expClient);
-        const response = await account.createEmailPasswordSession(
-            email,
-            password,
-        );        
+	/**
+	 * Handles user login.
+	 * It creates an email/password session with Appwrite and returns the
+	 * session secret for cookie creation.
+	 * @returns An object containing the username and session secret, or an error object.
+	 */
+	login: async (email: string, password: string) => {
+		try {
+			const client = new Client()
+				.setEndpoint(getRequiredEnv("VITE_APPWRITE_ENDPOINT")!)
+				.setProject(getRequiredEnv("VITE_APPWRITE_PROJECT_ID")!);
 
-        console.log("Login called");
-        const sessionId = response.$id;
-        const userID = response.userId;
-        const username = await userQHandle.findUsernameByID(userID);        
-        const jwt = await createJWT({ username, sessionId });
-      if (username) {
-        console.log("Login success IAOIAIAIAIAIA" + jwt);
-        
-        return { username, sessionId, jwt };
-      }
-      return response;
-    } catch (error) {
-      return { error: `Login failed: ${(error as Error).message}` };
-    }
-  },
+			const account = new Account(client);
+			const session = await account.createEmailPasswordSession(email, password);
 
-  logout: async () => {
-    try {
-    const account = new Account(expClient);
-      const response = await account.deleteSession("current");
-      return response;
-    } catch (error) {
-      return { error: `Logout failed: ${(error as Error).message}` };
-    }
-  },
+			// Retrieve the user's profile to get their username.
+			const username = await userQHandle.findUsernameByID(session.userId);
 
-  check: async (sessionId: string, jwt: string) => {
-    
-    console.log("Check JWT" + jwt);
-    
-    const { account } = createJWTClient(jwt);
-    console.log("Get session called" + sessionId);
+			if (username) {
+				// The session secret will be used to set a secure, httpOnly cookie.
+				return { username, sessionSecret: session.secret };
+			} else {
+				return { error: "User profile not found. Please contact support." };
+			}
+		} catch (error) {
+			console.error("Login Error:", error);
+			return { error: `Login failed: ${(error as Error).message}` };
+		}
+	},
 
-    try {
-      const session = await account.getSession(sessionId);
-      return session;
-    } catch (error) {
-      console.error("Get session error:", error);
-      return null;
-    }
-  },
+	/**
+	 * Handles user logout.
+	 * It uses the session secret from the user's cookie to delete the
+	 * current session from Appwrite.
+	 * @returns A success object or an error object.
+	 */
+	logout: async (sessionSecret: string) => {
+		try {
+			const { account } = createSessionClient(sessionSecret);
+			await account.deleteSession("current");
+			return { success: true };
+		} catch (error) {
+			console.error("Logout Error:", error);
+			return { error: `Logout failed: ${(error as Error).message}` };
+		}
+	},
+
+	/**
+	 * Checks the validity of a session.
+	 * This is an admin-level check and not typically used in the user flow.
+	 * @returns The session object if valid, otherwise null.
+	 */
+	check: async (sessionId: string) => {
+		try {
+			const { account } = createAdminClient();
+			const session = await account.getSession(sessionId);
+			return session;
+		} catch (error) {
+			console.error("Get Session Error:", error);
+			return null;
+		}
+	}
 };
