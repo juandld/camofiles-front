@@ -33,13 +33,16 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 				}
 
 				const result = await authHandlers.login(email, password);
+				console.log("[API Auth] Login result:", result);
 
 				if (result.error) {
+					console.log("[API Auth] Login failed, returning 400.");
 					return json(result, { status: 400 });
 				}
 
 				// On successful login, set a secure, httpOnly cookie with the session secret.
 				if (result.sessionSecret) {
+					console.log("[API Auth] Login successful, setting session cookie.");
 					cookies.set("session", result.sessionSecret, {
 						path: "/",
 						httpOnly: true,
@@ -47,9 +50,11 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 						secure: process.env.NODE_ENV === "production",
 						maxAge: 60 * 60 * 24 * 7 // 1 week
 					});
+					console.log("[API Auth] Session cookie set.");
 				}
 
 				// Do not send the sessionSecret back to the client.
+				console.log("[API Auth] Returning success response.");
 				return json({ success: true, username: result.username }, { status: 200 });
 			}
 

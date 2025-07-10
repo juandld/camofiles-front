@@ -46,7 +46,6 @@ export const userQHandle = {
                 authCollectionID,
                 userId,
                 {
-                    userId: userId, // Storing the auth user ID in the document
                     username: username,
                     email: email,
                     fullName: fullName,

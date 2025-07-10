@@ -1,36 +1,27 @@
-import { createAdminClient, createSessionClient } from "$lib/server/util/appwrite";
-import { Client, Account, ID } from "node-appwrite";
-import { getRequiredEnv } from "$lib/server/util/getEnv";
-import { userQHandle } from "./userQHandle";
+import { createAdminClient, createSessionClient } from "$lib/server/util/appwrite.ts";
+import { ID, Query } from "node-appwrite";
+import { userQHandle } from "./userQHandle.ts";
 
-/**
- * A collection of handlers for authentication-related actions.
- */
+const { account, users, databases } = createAdminClient();
+
 export const authHandlers = {
 	/**
-	 * Handles user registration.
-	 * It first checks for username availability, then creates a new Appwrite user
-	 * and a corresponding user profile document in the database.
-	 * @returns A success object or an error object.
+	 * Handles user signup.
+	 * Creates a user in Appwrite and adds them to a processing queue.
 	 */
 	signup: async (email: string, password: string, username: string, fullName: string) => {
 		try {
-			const isUsernameAvailable = await userQHandle.isUserAvailable(username);
-			if (!isUsernameAvailable) {
-				return { error: `Username ${username} is already taken` };
-			}
+			const user = await users.create(ID.unique(), email, undefined, password, fullName);
+			await users.updateName(user.$id, fullName);
+			await users.updatePrefs(user.$id, { username, fullName });
 
-			// Use the admin client to create a new user in Appwrite Auth.
-			const { account } = createAdminClient();
-			const newUser = await account.create(ID.unique(), email, password, username);
+			// Directly create the user document in the database
+			await userQHandle.createUser(user.$id, username, email, fullName);
 
-			// Create a corresponding user profile in the database.
-			await userQHandle.createUser(newUser.$id, username, email, fullName);
-
-			return { success: true };
+			return { success: true, userId: user.$id };
 		} catch (error) {
 			console.error("Signup Error:", error);
-			return { error: `Signup failed: ${(error as Error).message}` };
+			return { error: "Signup failed. Please try again." };
 		}
 	},
 
@@ -42,25 +33,20 @@ export const authHandlers = {
 	 */
 	login: async (email: string, password: string) => {
 		try {
-			const client = new Client()
-				.setEndpoint(getRequiredEnv("VITE_APPWRITE_ENDPOINT")!)
-				.setProject(getRequiredEnv("VITE_APPWRITE_PROJECT_ID")!);
-
-			const account = new Account(client);
+			console.log(`[Auth Handlers] Attempting login for email: ${email}`);
 			const session = await account.createEmailPasswordSession(email, password);
+			console.log("[Auth Handlers] Appwrite session created:", session);
+			const user = await account.get();
+			console.log("[Auth Handlers] Fetched user:", user);
 
-			// Retrieve the user's profile to get their username.
-			const username = await userQHandle.findUsernameByID(session.userId);
-
-			if (username) {
-				// The session secret will be used to set a secure, httpOnly cookie.
-				return { username, sessionSecret: session.secret };
-			} else {
-				return { error: "User profile not found. Please contact support." };
-			}
+			return {
+				success: true,
+				sessionSecret: session.secret,
+				username: user.prefs.username
+			};
 		} catch (error) {
 			console.error("Login Error:", error);
-			return { error: `Login failed: ${(error as Error).message}` };
+			return { error: "Invalid email or password." };
 		}
 	},
 
@@ -70,14 +56,14 @@ export const authHandlers = {
 	 * current session from Appwrite.
 	 * @returns A success object or an error object.
 	 */
-	logout: async (sessionSecret: string) => {
+	logout: async (session: string) => {
 		try {
-			const { account } = createSessionClient(sessionSecret);
+			const { account } = createSessionClient(session);
 			await account.deleteSession("current");
 			return { success: true };
 		} catch (error) {
 			console.error("Logout Error:", error);
-			return { error: `Logout failed: ${(error as Error).message}` };
+			return { error: "Logout failed." };
 		}
 	},
 
