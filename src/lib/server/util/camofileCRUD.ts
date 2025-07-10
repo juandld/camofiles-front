@@ -1,9 +1,9 @@
 import { database } from "$lib/server/util/appwrite.ts";
-import { ID } from "appwrite";
+import { ID } from "node-appwrite";
 import { getRequiredEnv } from "$lib/server/util/getEnv.ts";
 
 const databaseID = getRequiredEnv("VITE_APPWRITE_DATABASE_ID");
-const chamofileCollectionID = getRequiredEnv("VITE_APPWRITE_CHAMOFILES_COLLECTION_ID");
+const chamofileCollectionID = getRequiredEnv("VITE_APPWRITE_CAMOFILES_COLLECTION_ID");
 
 export const chamofileCRUD = {
   createChamofile: async (userID: string, title: string, content: string) => {

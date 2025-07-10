@@ -36,7 +36,10 @@ export const authHandlers = {
 			console.log(`[Auth Handlers] Attempting login for email: ${email}`);
 			const session = await account.createEmailPasswordSession(email, password);
 			console.log("[Auth Handlers] Appwrite session created:", session);
-			const user = await account.get();
+
+			// Use a session client to get the user details
+			const { account: userAccount } = createSessionClient(session.secret);
+			const user = await userAccount.get();
 			console.log("[Auth Handlers] Fetched user:", user);
 
 			return {

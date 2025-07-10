@@ -35,8 +35,9 @@
 
             if (result.username) {
                 console.log("User logged in successfully:", result.username);
-                // set user session store state
-                userState.sessionId = result.sessionId;
+                // Update the user state store
+                userState.isLoggedIn = true;
+                userState.username = result.username;
                 // Redirect to user profile
                 goto(`/${result.username}`);
             } else {

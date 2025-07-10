@@ -9,7 +9,7 @@ export type RequiredEnvVars = {
   VITE_APPWRITE_DATABASE_ID: string;
   VITE_APPWRITE_USERS_COLLECTION_ID: string;
   VITE_APPWRITE_API_KEY: string;
-  VITE_APPWRITE_CHAMOFILES_COLLECTION_ID: string;
+  VITE_APPWRITE_CAMOFILES_COLLECTION_ID: string;
   VITE_JWT_SECRET_KEY: string;
   // Add other required env vars here
 };
