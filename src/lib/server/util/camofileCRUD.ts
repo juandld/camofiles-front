@@ -3,29 +3,29 @@ import { ID } from "node-appwrite";
 import { getRequiredEnv } from "$lib/server/util/getEnv.ts";
 
 const databaseID = getRequiredEnv("VITE_APPWRITE_DATABASE_ID");
-const chamofileCollectionID = getRequiredEnv("VITE_APPWRITE_CAMOFILES_COLLECTION_ID");
+const camofilesCollectionID = getRequiredEnv("VITE_APPWRITE_CAMOFILES_COLLECTION_ID");
 
-export const chamofileCRUD = {
-  createChamofile: async (userID: string, title: string, content: string) => {
-    const newChamofile = await database.createDocument(
+export const camofileCRUD = {
+  createCamofile: async (ownerID: string, title: string, content: string) => {
+    const newCamofile = await database.createDocument(
       databaseID,
-      chamofileCollectionID,
+      camofilesCollectionID,
       ID.unique(),
       {
-        userID,
+        ownerID,
         title,
         content,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
     );
-    return newChamofile.$id;
+    return newCamofile.$id;
   },
 
-  updateChamofile: async (chamofileID: string, title: string, content: string) => {
+  updateCamofile: async (chamofileID: string, title: string, content: string) => {
     await database.updateDocument(
       databaseID,
-      chamofileCollectionID,
+      camofilesCollectionID,
       chamofileID,
       {
         title,
@@ -35,7 +35,7 @@ export const chamofileCRUD = {
     );
   },
 
-  deleteChamofile: async (chamofileID: string) => {
-    await database.deleteDocument(databaseID, chamofileCollectionID, chamofileID);
+  deleteCamofile: async (chamofileID: string) => {
+    await database.deleteDocument(databaseID, camofilesCollectionID, chamofileID);
   },
 };
